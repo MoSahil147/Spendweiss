@@ -22,5 +22,12 @@
   {"date": "2026-06-15", "merchant": "Airtel", "category": "other", "amount": 999.00, "card_used": "card_f"},
   {"date": "2026-06-18", "merchant": "Zomato", "category": "dining", "amount": 720.00, "card_used": "card_b"},
   {"date": "2026-06-21", "merchant": "BigBasket", "category": "groceries", "amount": 2380.00, "card_used": "card_a"},
-  {"date": "2026-06-25", "merchant": "MakeMyTrip", "category": "travel", "amount": 22000.00, "card_used": "card_d"}
+  {"date": "2026-06-25", "merchant": "MakeMyTrip", "category": "travel", "amount": 22000.00, "card_used": "card_d"},
+  {"date": "2026-03-11", "merchant": "Netflix", "category": "other", "amount": 649.00, "card_used": "card_f"},
+  {"date": "2026-04-11", "merchant": "Netflix", "category": "other", "amount": 649.00, "card_used": "card_f"},
+  {"date": "2026-04-15", "merchant": "Cult.fit", "category": "other", "amount": 999.00, "card_used": "card_c"},
+  {"date": "2026-05-15", "merchant": "Cult.fit", "category": "other", "amount": 999.00, "card_used": "card_c"},
+  {"date": "2026-06-11", "merchant": "Netflix", "category": "other", "amount": 649.00, "card_used": "card_f"},
+  {"date": "2026-06-15", "merchant": "Cult.fit", "category": "other", "amount": 999.00, "card_used": "card_c"},
+  {"date": "2026-07-11", "merchant": "Netflix", "category": "other", "amount": 649.00, "card_used": "card_f"}
 ]
