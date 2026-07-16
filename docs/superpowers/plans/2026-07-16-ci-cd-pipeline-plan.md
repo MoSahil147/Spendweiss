@@ -116,9 +116,27 @@ Expected: 7 tests, all `PASSED`. If any fail, the underlying data file has a rea
 
 **Interfaces:**
 - Consumes: `backend/pyproject.toml` and `backend/tests/` from Task 1.
-- Produces: a workflow whose job name is referenced by name in Task 3's branch protection configuration. The job id used here is `test`, and it must match exactly what gets passed to `gh api` in Task 3.
+- Produces: a workflow that runs the test suite on every pull request against `main`, comments on the pull request with the result, and merges it automatically on success. No other task depends on a specific job id from this one, branch protection in Task 3 no longer requires a named status check, see the spec's Non goals for why.
 
-- [ ] **Step 1: Write `.github/workflows/ci.yml`**
+Before writing the workflow, confirm the latest available versions of the two actions used, rather than copying versions from memory:
+
+```bash
+curl -s https://api.github.com/repos/actions/checkout/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])"
+curl -s https://api.github.com/repos/astral-sh/setup-uv/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])"
+```
+Use whatever major version tags these report (for example `v7` and `v8`) in place of the versions shown in Step 1 below if they have changed since this plan was written.
+
+- [ ] **Step 1: Resolve commit SHAs for the pinned actions**
+
+```bash
+curl -s https://api.github.com/repos/astral-sh/setup-uv/git/refs/tags/v8.3.2 --jq '.object.sha'
+curl -s https://api.github.com/repos/actions/checkout/git/refs/tags/v7.0.0 --jq '.object.sha'
+```
+Use these SHAs (or freshly resolved ones, if the latest tag has moved on since this plan was written) in Step 2, each with the human readable tag kept as a trailing comment.
+
+- [ ] **Step 2: Write `.github/workflows/ci.yml`**
+
+Two jobs, following least privilege: `test` has the default read only token and does the actual work, `merge` is the only job with write access and does not check out any code, it only calls `gh` based on whether `test` succeeded.
 
 ```yaml
 name: CI
@@ -132,13 +150,36 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
       - run: uv sync
         working-directory: backend
       - run: uv run pytest
         working-directory: backend
+
+  merge:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Comment and merge on success
+        if: needs.test.result == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "All tests passed, merging automatically."
+          gh pr merge ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --squash --delete-branch
+      - name: Comment on failure
+        if: needs.test.result == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "Tests failed, auto-merge blocked."
 ```
+
+None of the `run:` blocks above interpolate any untrusted pull request supplied text (title, body, branch name); the only template values used are `github.event.pull_request.number` (a plain integer) and `github.repository` (a fixed value for this workflow run), so there is no shell or GitHub Actions expression injection risk here. This was checked against an automated security review during development, which separately flagged the earlier single job, unpinned action version of this workflow; both points are fixed in this version, not dismissed.
 
 - [ ] **Step 2: Validate the YAML locally**
 
@@ -147,7 +188,7 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml')); print
 ```
 Expected output: `valid yaml`. If `PyYAML` is not available in the system Python, install it into a throwaway venv rather than skipping this check: `python3 -m venv /tmp/yamlcheck && /tmp/yamlcheck/bin/pip install pyyaml -q && /tmp/yamlcheck/bin/python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml')); print('valid yaml')"`.
 
-This workflow cannot be fully exercised until it exists on a branch with an open pull request against `main`, which is why Task 4 covers end to end verification after Task 3's branch protection is in place.
+This workflow cannot be fully exercised until it exists on a branch with an open pull request against `main`, which is why Task 4 covers end to end verification after Task 3's branch protection is in place. Opening that pull request is the user's action, not a step in this plan.
 
 ---
 
@@ -155,12 +196,11 @@ This workflow cannot be fully exercised until it exists on a branch with an open
 
 **Files:** none, this task only runs `gh api` commands against the repository's settings.
 
-**Interfaces:**
-- Consumes: the job id `test` from Task 2's workflow, which must appear in the `contexts` list below exactly as written there.
+**Interfaces:** none, standalone repository configuration.
 
 - [ ] **Step 1: Show the user the exact command before running it**
 
-State to the user: this will configure branch protection on `main` for `MoSahil147/Spendweiss`, requiring the `test` status check to pass and disallowing direct pushes. Wait for explicit confirmation before running Step 2.
+State to the user: this will configure branch protection on `main` for `MoSahil147/Spendweiss`, disallowing direct pushes so every change must go through a pull request. Deliberately does not require a named status check, since Task 2's workflow merges from within the same job that runs the tests, a required check would still show as pending at the moment that job tries to merge, and would block it. The workflow's own `if: success()` step is what gates the merge on tests passing, not branch protection. Wait for explicit confirmation before running Step 2.
 
 - [ ] **Step 2: Apply branch protection**
 
@@ -168,8 +208,7 @@ State to the user: this will configure branch protection on `main` for `MoSahil1
 gh api repos/MoSahil147/Spendweiss/branches/main/protection \
   --method PUT \
   -H "Accept: application/vnd.github+json" \
-  -f "required_status_checks[strict]=true" \
-  -f "required_status_checks[contexts][]=test" \
+  -f "required_status_checks=null" \
   -F "enforce_admins=true" \
   -F "required_pull_request_reviews=null" \
   -F "restrictions=null" \
@@ -181,68 +220,42 @@ Expected: a JSON response describing the new protection rule, HTTP 200. If this 
 - [ ] **Step 3: Verify**
 
 ```bash
-gh api repos/MoSahil147/Spendweiss/branches/main/protection --jq '.required_status_checks.contexts'
+gh api repos/MoSahil147/Spendweiss/branches/main/protection --jq '{required_status_checks, allow_force_pushes: .allow_force_pushes.enabled}'
 ```
-Expected output: `["test"]`
+Expected: `required_status_checks` is `null`, `allow_force_pushes` is `false`.
 
 ---
 
-### Task 4: Enable auto-merge on the repository and verify the whole pipeline
+### Task 4: Verify the whole pipeline
 
-**Files:** none for Step 1. A throwaway file is created and removed as part of the end to end verification in Step 3.
+**Files:** none. This task only runs once the user has opened a real pull request; nothing here is a file change made by the agent.
 
 **Interfaces:**
-- Consumes: Task 1's tests, Task 2's workflow, and Task 3's branch protection, exercised together for the first time here.
+- Consumes: Task 1's tests, Task 2's workflow, and Task 3's branch protection, exercised together for the first time.
 
-- [ ] **Step 1: Show the user the exact command before running it**
+The user opens the pull request themselves (stated explicitly during this project's CI redesign: "pull request will be given by me"), committing and pushing whichever branch has Task 1 and Task 2's new files first. This plan does not commit, push, or open the pull request.
 
-State to the user: this will turn on the "Allow auto-merge" repository setting for `MoSahil147/Spendweiss`, which is what makes the "Enable auto-merge" button appear on pull requests. Wait for explicit confirmation before running Step 2.
+- [ ] **Step 1: Watch the checks once a pull request exists**
 
-- [ ] **Step 2: Enable auto-merge**
-
-```bash
-gh api repos/MoSahil147/Spendweiss --method PATCH -F allow_auto_merge=true
-```
-Expected: JSON response with `"allow_auto_merge": true`.
-
-- [ ] **Step 3: Show the user the exact commands before running them**
-
-State to the user: this will push the current branch (`phase-1-raw-react`, which already contains Task 1 and Task 2's new files once committed) and open a real pull request against `main` to prove the pipeline end to end, since GitHub Actions cannot run without a real pull request. Wait for explicit confirmation before running Step 4. Confirm with the user first whether Tasks 1 and 2's new files should be committed for this, since the project's standing instruction has been to leave changes unstaged.
-
-- [ ] **Step 4: Commit, push, and open the pull request**
-
-```bash
-git add backend/pyproject.toml backend/uv.lock backend/tests/ .github/workflows/ci.yml
-git commit -m "Add CI pipeline: pytest suite and GitHub Actions workflow"
-git push -u origin phase-1-raw-react
-gh pr create --title "CI: pytest suite and GitHub Actions workflow" --body "Adds a real pytest suite for the Phase 0 mock data, a GitHub Actions workflow that runs it on every pull request, branch protection requiring that check, and the auto-merge repository setting."
-```
-Expected: the PR is created, its URL is printed. GitHub Actions starts running the `test` job automatically.
-
-- [ ] **Step 5: Confirm the check goes green**
-
+Once the user confirms a pull request is open against `main`:
 ```bash
 gh pr checks --watch
 ```
-Expected: the `test` check reports `pass` within a couple of minutes. If it reports `fail`, read the workflow log with `gh run view --log-failed` and fix the underlying issue (most likely a `uv sync` or `pytest` failure that did not reproduce locally, for example a Python version mismatch between the workflow's `ubuntu-latest` image and the local machine) before proceeding.
+Expected: the `test` job reports `pass` within a couple of minutes. If it reports `fail`, read the workflow log with `gh run view --log-failed` and report the underlying issue to the user rather than guessing a fix (most likely a `uv sync` or `pytest` failure that did not reproduce locally, for example a Python version mismatch between the workflow's `ubuntu-latest` image and the local machine).
 
-- [ ] **Step 6: Arm auto-merge and confirm it merges**
+- [ ] **Step 2: Confirm the automatic comment and merge happened**
 
 ```bash
-gh pr merge --auto --squash
+gh pr view --json state,mergedAt,comments --jq '{state, mergedAt, lastComment: .comments[-1].body}'
 ```
-Expected: GitHub reports auto-merge is enabled for the PR. Once Step 5's check is already green, GitHub merges immediately. Confirm with:
-```bash
-gh pr view --json state,mergedAt
-```
-Expected: `"state": "MERGED"` with a non-null `mergedAt`.
+Expected: `"state": "MERGED"`, a non-null `mergedAt`, and `lastComment` reading `"All tests passed, merging automatically."`. No manual merge click involved anywhere in this sequence.
 
-- [ ] **Step 7: Update the journal**
+- [ ] **Step 3: Update the journal**
 
-Append to `JOURNAL.md`, filling in the template with what happened in this task (in particular, whether branch protection or auto-merge needed any adjustment, and what the first real CI run showed):
+Append to `JOURNAL.md`, filling in the template with what happened in this task (in particular, what the first real automatic merge showed, and whether the branch protection change without a required status check behaved as expected):
 
 ```
-## CI pipeline: pytest, GitHub Actions, branch protection, auto-merge (2026-07-16)
+## CI/CD pipeline: pytest, GitHub Actions, fully automatic merge on green (2026-07-16)
 
 **What I built:**
 
