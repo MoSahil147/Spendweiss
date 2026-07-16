@@ -21,6 +21,11 @@ def test_extract_rupee_amount_returns_none_when_absent():
     assert _extract_rupee_amount("what card should I use for groceries") is None
 
 
+def test_extract_rupee_amount_ignores_words_ending_in_rs():
+    assert _extract_rupee_amount("I walked 40 hours 5000 steps today") is None
+    assert _extract_rupee_amount("the cars 5000 model is popular") is None
+
+
 def test_mentions_cancellation_true():
     assert _mentions_cancellation("You should consider cancelling this Netflix subscription") is True
 
@@ -31,3 +36,17 @@ def test_mentions_cancellation_case_insensitive():
 
 def test_mentions_cancellation_false():
     assert _mentions_cancellation("Netflix is good value, keep it") is False
+
+
+from phase7_human_loop.graph import graph
+
+
+def test_graph_has_dispatch_and_approval_nodes():
+    node_names = set(graph.get_graph().nodes.keys())
+    assert "dispatch_node" in node_names
+    assert "approval_gate" in node_names
+
+
+def test_graph_edges_run_dispatch_before_approval():
+    edges = {(edge.source, edge.target) for edge in graph.get_graph().edges}
+    assert ("dispatch_node", "approval_gate") in edges
