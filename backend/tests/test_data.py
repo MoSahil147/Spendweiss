@@ -20,9 +20,9 @@ def test_six_offers():
     assert len(offers) == 6
 
 
-def test_twenty_four_transactions():
+def test_thirty_one_transactions():
     transactions = load_json("transactions.json")
-    assert len(transactions) == 24
+    assert len(transactions) == 31
 
 
 def test_every_card_has_exactly_one_offer():
