@@ -82,3 +82,22 @@ The framework genuinely does remove real code: `agent.py` has no while loop, no 
 
 **Next up:**
 Phase 3 adds memory: a conversation buffer for short term context and Chroma backed retrieval over `transactions.json` for long term context, so recommendations start referencing spending patterns, not just the current purchase. The CI pipeline's branch protection and auto-merge steps are still paused from earlier and should be finished before too many more phases pile up unprotected commits on `main`.
+
+---
+
+## Phase 3: Memory (2026-07-16)
+
+**What I built:**
+`backend/phase3_memory/memory.py`, a local Chroma `PersistentClient` collection built once from `backend/data/transactions.json`, one document per transaction, using Chroma's default local embedding model, no API key needed. `backend/phase3_memory/tools.py`, re-exporting Phase 2's `check_card_rewards` and `check_offers` unchanged and adding `search_past_transactions`, which queries the collection and filters results by a distance threshold rather than trusting Chroma's raw nearest neighbours, since Chroma always returns its closest matches regardless of actual relevance. `backend/phase3_memory/agent.py`, identical to Phase 2's agent except the `messages` list is created once outside the query loop instead of fresh per query, giving the whole session short term memory. `backend/tests/test_phase3_memory.py`, two tests. Verified end to end with a two query sequence: a memory lookup query, then a follow up that only makes sense if the first query's context carried over, both worked correctly.
+
+**Key decisions:**
+Determined `RELEVANCE_THRESHOLD` (1.4) empirically rather than guessing: ran a real query for "BigBasket" (its three true matches clustered at distances 1.10 to 1.16) against a deliberately nonsense query, "quantum physics homework" (closest distance 1.69), and picked a cutoff that sits in the clear gap between them. `chromadb` was added with a plain `uv add chromadb`, no dependency conflict this time, unlike `langchain-groq` in Phase 2, and Phase 1 and 2's tests were re-run immediately after to confirm nothing broke, which they did not.
+
+**Gotchas and bugs hit:**
+None new. The empty-list-must-be-a-JSON-string fix from Phase 2 was reapplied here proactively rather than rediscovered, `search_past_transactions` returns `json.dumps(matches)` from the start.
+
+**What I learned:**
+Vector search does not have a natural "no match" the way a substring search does, `check_offers` can return a genuinely empty list, but Chroma's `.query()` always returns its `n_results` nearest neighbours even when none of them are actually relevant. Making "no relevant matches" a real, testable outcome required an explicit distance threshold, and that threshold is only meaningful if it comes from real distances on the real data and the real embedding model, not a number picked in the abstract. The end to end run was also the clearest demonstration yet in this project of why short term memory matters: the second query, "given that, should I use a different card for groceries going forward", is not answerable at all without the first query's context, there is no "that" without it, and the agent handled it correctly on the first try.
+
+**Next up:**
+Phase 4 moves this agent into an explicit LangGraph `StateGraph`, with separate nodes and conditional edges instead of `create_agent`'s implicit internal graph, and a `.get_graph().draw_mermaid()` diagram for the README. The CI pipeline's branch protection is live and working; the auto-merge workflow itself was hardened after a security review (pinned action SHAs, least privilege two job split) during the Phase 2 to main merge.
