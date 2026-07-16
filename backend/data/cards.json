@@ -1,0 +1,92 @@
+[
+  {
+    "id": "card_a",
+    "name": "HDFC Millennia Credit Card",
+    "issuer": "HDFC Bank",
+    "annual_fee": 1000,
+    "reward_rates": {
+      "groceries": 0.01,
+      "dining": 0.05,
+      "travel": 0.01,
+      "online_shopping": 0.05,
+      "fuel": 0.0,
+      "other": 0.01
+    },
+    "notes": "5 percent cashback, as CashPoints, on Amazon, Flipkart, Myntra, Swiggy, Zomato, Uber, BookMyShow and other partner brands, 1 percent on other spends, capped at 1000 points per category per statement cycle. Fuel does not earn cashback. Annual fee waived on spends of Rs 100000 or more in a year."
+  },
+  {
+    "id": "card_b",
+    "name": "Axis Bank Magnus Credit Card",
+    "issuer": "Axis Bank",
+    "annual_fee": 12500,
+    "reward_rates": {
+      "groceries": 0.012,
+      "dining": 0.012,
+      "travel": 0.06,
+      "online_shopping": 0.012,
+      "fuel": 0.0,
+      "other": 0.012
+    },
+    "notes": "12 EDGE Reward points per Rs 200 on general spends, about 1.2 percent at typical redemption value. Steep acceleration on travel booked through the Axis EDGE Rewards travel portal, simplified here to a flat 6 percent. Fuel is excluded from reward earning."
+  },
+  {
+    "id": "card_c",
+    "name": "ICICI Amazon Pay Credit Card",
+    "issuer": "ICICI Bank",
+    "annual_fee": 0,
+    "reward_rates": {
+      "groceries": 0.01,
+      "dining": 0.01,
+      "travel": 0.01,
+      "online_shopping": 0.05,
+      "fuel": 0.01,
+      "other": 0.01
+    },
+    "notes": "5 percent reward points on Amazon.in for Amazon Prime members, 2 percent at Amazon Pay partner merchants, 1 percent on all other spends including fuel. Lifetime free card, no joining or annual fee."
+  },
+  {
+    "id": "card_d",
+    "name": "HDFC Infinia Credit Card",
+    "issuer": "HDFC Bank",
+    "annual_fee": 12500,
+    "reward_rates": {
+      "groceries": 0.033,
+      "dining": 0.033,
+      "travel": 0.05,
+      "online_shopping": 0.033,
+      "fuel": 0.0,
+      "other": 0.033
+    },
+    "notes": "5 reward points per Rs 150 spent, about 3.3 percent, redeemable 1 to 1 for flights and hotels via the SmartBuy platform. Up to 10X accelerated points on SmartBuy travel and shopping bookings, simplified here to a flat 5 percent for travel. Fuel does not earn reward points."
+  },
+  {
+    "id": "card_e",
+    "name": "SBI Cashback Credit Card",
+    "issuer": "SBI Card",
+    "annual_fee": 999,
+    "reward_rates": {
+      "groceries": 0.01,
+      "dining": 0.01,
+      "travel": 0.01,
+      "online_shopping": 0.05,
+      "fuel": 0.0,
+      "other": 0.01
+    },
+    "notes": "5 percent cashback on all online spends, capped at Rs 2000 per statement cycle, 1 percent on offline spends, capped at Rs 2000 per statement cycle. Fuel does not earn cashback, only a 1 percent surcharge waiver up to Rs 100 per cycle. Annual fee waived from year 2 onward on spends of Rs 200000 or more in a year."
+  },
+  {
+    "id": "card_f",
+    "name": "IDFC FIRST Select Credit Card",
+    "issuer": "IDFC FIRST Bank",
+    "annual_fee": 0,
+    "reward_rates": {
+      "groceries": 0.00375,
+      "dining": 0.0125,
+      "travel": 0.0125,
+      "online_shopping": 0.00375,
+      "fuel": 0.00375,
+      "other": 0.00375
+    },
+    "notes": "3 reward points per Rs 200 spent up to Rs 20000 a month, about 0.375 percent, 10 points per Rs 200 above that threshold. Accelerated 10X points on dining, travel and international spends, about 1.25 percent. 1 reward point equals Rs 0.25. Lifetime free, no joining or annual fee, which is this card's main advantage over the cashback focused cards above."
+  }
+]

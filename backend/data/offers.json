@@ -1,0 +1,50 @@
+[
+  {
+    "id": "offer_1",
+    "card_id": "card_a",
+    "merchant": "BigBasket",
+    "description": "10 percent off at BigBasket for a limited time when paid with the HDFC Millennia Credit Card",
+    "discount_rate": 0.10,
+    "valid_until": "2026-08-31"
+  },
+  {
+    "id": "offer_2",
+    "card_id": "card_b",
+    "merchant": "IndiGo",
+    "description": "Bonus EDGE Reward points on IndiGo bookings made through the Axis EDGE Rewards travel portal with the Axis Bank Magnus Credit Card",
+    "discount_rate": 0.05,
+    "valid_until": "2026-09-15"
+  },
+  {
+    "id": "offer_3",
+    "card_id": "card_c",
+    "merchant": "Amazon.in",
+    "description": "Extra 5 percent cashback on Amazon.in purchases for a limited time with the ICICI Amazon Pay Credit Card",
+    "discount_rate": 0.05,
+    "valid_until": "2026-07-31"
+  },
+  {
+    "id": "offer_4",
+    "card_id": "card_d",
+    "merchant": "MakeMyTrip",
+    "description": "Accelerated SmartBuy Reward points on MakeMyTrip flight and hotel bookings with the HDFC Infinia Credit Card, capped at 15000 points a month",
+    "discount_rate": 0.05,
+    "valid_until": "2026-08-15"
+  },
+  {
+    "id": "offer_5",
+    "card_id": "card_e",
+    "merchant": "Myntra",
+    "description": "10 percent instant discount on Myntra when paid with the SBI Cashback Credit Card, on a minimum spend of Rs 999",
+    "discount_rate": 0.10,
+    "valid_until": "2026-08-10"
+  },
+  {
+    "id": "offer_6",
+    "card_id": "card_f",
+    "merchant": "District",
+    "description": "Buy one get one free movie ticket up to Rs 125, twice a month, on the District by Zomato app with the IDFC FIRST Select Credit Card, on a minimum spend of Rs 20000 in the previous month",
+    "discount_rate": 0.50,
+    "valid_until": "2026-12-31"
+  }
+]
