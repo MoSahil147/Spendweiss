@@ -4,11 +4,12 @@
 # line. Here, every node and edge is visible and inspectable, which is
 # also what makes graph.get_graph().draw_mermaid() meaningful, there is
 # now an actual hand designed shape to draw.
-import os
 from typing import Annotated
 
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
+
+from groq_client import invoke_with_groq_fallback
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -20,29 +21,23 @@ load_dotenv()
 
 MODEL = "llama-3.3-70b-versatile"
 
+SYSTEM_PROMPT = """You are SpendWeiss, a professional financial assistant for the Indian market that recommends the best card or subscription action using only the data in the conversation.
+
+All amounts, fees, and cashback values are in Indian Rupees. Always write them as ₹<amount> (e.g. ₹649, ₹1,000), never as dollars or with a $ sign.
+
+Write your final recommendation as a short, professional explanation, not a one-line verdict. It should:
+1. State the recommendation clearly in the first sentence.
+2. Cite the specific numbers behind it — the exact reward rate or cashback percentage, and any active offer's discount rate and expiry, quoted from the tool results already shown.
+3. List the other cards the tool results actually returned, by name and rate, so the reader can see every candidate that was considered — not just the winner — and state plainly why it beat each of them (higher rate, a better active offer, or a lower fee for a similar rate).
+4. Note anything a careful shopper would want to know: the card's annual fee, whether the category match is exact or approximate, and any caveat in the data.
+
+Prefer the strongest answer supported by the actual reward tables, offer data, and retrieved spending history.
+Do not invent facts — every number you cite must come from the tool results already shown in this conversation.
+"""
+
 
 class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
-
-
-# Built lazily, on first use inside reason(), not here at import time.
-# Phase 2 and 3 avoided this problem by only constructing ChatGroq inside
-# main(), which this module doesn't have, since graph.py is imported by
-# tests that never call the live model at all (test_phase4_graph.py only
-# inspects the graph's shape and calls retrieve_memory directly). Building
-# the client at import time meant simply importing this module for those
-# tests required a real GROQ_API_KEY, which is not set in CI and should
-# not need to be, since nothing in the automated test suite calls the
-# model.
-_model_with_tools = None
-
-
-def _get_model_with_tools():
-    global _model_with_tools
-    if _model_with_tools is None:
-        model = ChatGroq(model=MODEL, api_key=os.environ["GROQ_API_KEY"])
-        _model_with_tools = model.bind_tools([check_card_rewards, check_offers])
-    return _model_with_tools
 
 
 def retrieve_memory(state: AgentState) -> dict:
@@ -59,7 +54,22 @@ def retrieve_memory(state: AgentState) -> dict:
 
 
 def reason(state: AgentState) -> dict:
-    response = _get_model_with_tools().invoke(state["messages"])
+    # The model is built fresh inside invoke_with_groq_fallback's callback,
+    # never at import time or cached across calls, for two reasons that
+    # both still hold from Phase 4's original lazy-init design: (1)
+    # test_phase4_graph.py imports this module and inspects the graph's
+    # shape without ever calling reason(), so no GROQ_API_KEY is required
+    # for that; (2) a cached singleton client would bake in one API key
+    # forever, defeating the whole point of multi-key fallback, since a
+    # rate-limited key needs a *different* client on retry, not the same
+    # one retried.
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + state["messages"]
+
+    def _invoke(key: str):
+        model = ChatGroq(model=MODEL, api_key=key).bind_tools([check_card_rewards, check_offers])
+        return model.invoke(messages)
+
+    response = invoke_with_groq_fallback(_invoke)
     return {"messages": [response]}
 
 

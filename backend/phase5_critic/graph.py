@@ -3,11 +3,12 @@
 # in the conversation, no new API calls to check_card_rewards or
 # check_offers, that was a deliberate choice, the data needed to check the
 # recommendation's maths is already sitting in state["messages"].
-import os
 from typing import Annotated
 
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
+
+from groq_client import invoke_with_groq_fallback
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -20,13 +21,16 @@ load_dotenv()
 MODEL = "llama-3.3-70b-versatile"
 
 CRITIC_PROMPT = """You are a careful reviewer checking a card recommendation for correctness.
+All amounts are in Indian Rupees — if you cite one, write it as ₹<amount>, never with a $ sign.
 Review the tool results already shown in this conversation (card reward
 rates, active offers, and any past transaction context) against the final
 recommendation that was just given. Check whether the recommendation
 actually picked the option with the best real value for this purchase,
 comparing reward rate value against any offer discount value where both
 apply, and whether its stated reasoning is factually consistent with the
-tool results shown above, not just plausible sounding.
+tool results shown above, not just plausible sounding. If more than one
+option seems usable, pick the one with the strongest verified value from
+the evidence, not the one that merely sounds reasonable.
 
 If the recommendation is correct, reply with exactly: APPROVED
 If there is a real, specific problem, reply with: REVISE: <the specific
@@ -44,19 +48,6 @@ class AgentState(TypedDict):
     critic_verdict: str
 
 
-# Built lazily, on first use inside critic(), for the same reason Phase 4's
-# reason() builds its model lazily: importing this module for tests must
-# not require a real GROQ_API_KEY.
-_critic_model = None
-
-
-def _get_critic_model():
-    global _critic_model
-    if _critic_model is None:
-        _critic_model = ChatGroq(model=MODEL, api_key=os.environ["GROQ_API_KEY"])
-    return _critic_model
-
-
 def _should_revise(verdict_content: str, critique_count: int) -> bool:
     # A pure function on purpose, so the one revision cap is testable
     # without a live model call, unlike the rest of critic()'s behaviour.
@@ -64,8 +55,17 @@ def _should_revise(verdict_content: str, critique_count: int) -> bool:
 
 
 def critic(state: AgentState) -> dict:
+    # Built fresh inside invoke_with_groq_fallback's callback, never cached,
+    # for the same two reasons as Phase 4's reason(): importing this module
+    # for tests must not require a real GROQ_API_KEY, and a cached client
+    # would permanently bind to whichever key built it, defeating fallback
+    # to a different key on a rate limit.
     messages = list(state["messages"]) + [{"role": "user", "content": CRITIC_PROMPT}]
-    verdict = _get_critic_model().invoke(messages)
+
+    def _invoke(key: str):
+        return ChatGroq(model=MODEL, api_key=key).invoke(messages)
+
+    verdict = invoke_with_groq_fallback(_invoke)
     critique_count = state.get("critique_count", 0) + 1
     should_revise = _should_revise(verdict.content, critique_count)
 

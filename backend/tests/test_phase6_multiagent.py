@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from phase6_multiagent.subscription_hunter import find_recurring_charges
 from phase6_multiagent.supervisor import (
+    _detail_for_update,
     _normalise_classification,
     _stream_with_trace,
     _summarize_update,
@@ -54,10 +55,16 @@ def test_summarize_update_with_object_message():
     assert _summarize_update("respond", update) == "respond: Use HDFC Millennia for this purchase."
 
 
-def test_summarize_update_truncates_long_content():
+def test_summarize_update_keeps_long_content():
     update = {"messages": [{"role": "assistant", "content": "x" * 300}]}
     result = _summarize_update("respond", update)
-    assert result == "respond: " + "x" * 200
+    assert result == "respond: " + "x" * 300
+
+
+def test_detail_for_update_keeps_long_content():
+    update = {"messages": [{"role": "assistant", "content": "y" * 500}]}
+    result = _detail_for_update("respond", update)
+    assert result == "y" * 500
 
 
 def test_summarize_update_with_no_messages_key():
