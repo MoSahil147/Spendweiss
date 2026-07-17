@@ -26,3 +26,6 @@ dist/
 
 # Chroma vector store (rebuildable from backend/data/transactions.json)
 backend/phase3_memory/chroma_data/
+
+# Superpowers scratch (spec/plan brainstorming + subagent-driven-dev progress ledgers)
+.superpowers/
