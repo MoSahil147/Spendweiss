@@ -109,7 +109,9 @@ def test_dispatch_both_concatenates_traces_from_both_specialists():
     sub_state = {"messages": [{"role": "assistant", "content": "Use card X"}, {"role": "assistant", "content": "Cancel Netflix"}]}
     sub_trace = [{"node": "model", "graph": "subscription_hunter", "summary": "model: Cancel Netflix"}]
 
-    with patch("phase6_multiagent.supervisor._stream_with_trace", side_effect=[(card_state, card_trace), (sub_state, sub_trace)]):
+    with patch("phase6_multiagent.supervisor.get_subscription_hunter_agent"), patch(
+        "phase6_multiagent.supervisor._stream_with_trace", side_effect=[(card_state, card_trace), (sub_state, sub_trace)]
+    ):
         messages, trace = dispatch("both", [{"role": "user", "content": "hi"}])
 
     assert messages == sub_state["messages"]
