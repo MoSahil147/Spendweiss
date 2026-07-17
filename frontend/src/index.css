@@ -1,0 +1,109 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    background-color: #f5f4ef;
+    /* Faint teal grid so the page reads as a data surface, not a blank canvas. */
+    background-image:
+      linear-gradient(rgba(12, 107, 94, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(12, 107, 94, 0.035) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: #14211d;
+    font-family: "Inter", system-ui, sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid #0c6b5e;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Decision diagram — the signature element.                          */
+/* Styled as a "reasoning ledger": the path that was actually taken    */
+/* reads as confident peacock teal; the rest of the graph is legibly   */
+/* dimmed to a pencil-faint trace so the story is obvious at a glance.  */
+/* Selectors are scoped with .react-flow__… to out-specify the vendor  */
+/* stylesheet's default node/edge rules regardless of import order.     */
+/* ------------------------------------------------------------------ */
+
+.react-flow__node {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: opacity 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+/* Visited: this step actually ran. Solid teal-tint chip, teal border, ink text. */
+.react-flow__node.diagram-node-visited {
+  background: #ffffff;
+  color: #14211d;
+  border: 1.5px solid #0c6b5e;
+  font-weight: 600;
+  box-shadow:
+    0 0 0 4px rgba(12, 107, 94, 0.10),
+    0 6px 18px -8px rgba(12, 107, 94, 0.45);
+  cursor: pointer;
+}
+
+.react-flow__node.diagram-node-visited:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 4px rgba(12, 107, 94, 0.16),
+    0 10px 24px -8px rgba(12, 107, 94, 0.55);
+}
+
+/* Dimmed: part of the graph but not this run. Pencil-faint, clearly recessed. */
+.react-flow__node.diagram-node-dimmed {
+  background: #f4f2ea;
+  color: #55615d;
+  border: 1px solid #c7c0b1;
+  font-weight: 400;
+  box-shadow: 0 1px 0 rgba(20, 33, 29, 0.04);
+  opacity: 1;
+}
+
+/* Visited edge: the flow that was taken — bright teal, thicker, animated dashes. */
+.react-flow__edge.diagram-edge-visited .react-flow__edge-path {
+  stroke: #0c6b5e;
+  stroke-width: 2.5px;
+}
+
+.react-flow__edge.diagram-edge-visited.animated .react-flow__edge-path {
+  stroke-dasharray: 6 4;
+}
+
+/* Dimmed edge: faint hairline that stays out of the way. */
+.react-flow__edge.diagram-edge-dimmed .react-flow__edge-path {
+  stroke: #b9b09f;
+  stroke-width: 1.5px;
+  opacity: 1;
+}
+
+/* Soften the default dot grid so it reads as a faint substrate, not noise. */
+.react-flow__background {
+  opacity: 0.28;
+}
+
+/* Quieten React Flow's attribution + controls to fit the palette. */
+.react-flow__attribution {
+  background: transparent;
+  font-size: 9px;
+}
+
+.react-flow__attribution a {
+  color: #a7ada9;
+}
