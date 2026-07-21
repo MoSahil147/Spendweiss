@@ -4,6 +4,8 @@ An agentic AI card and spend optimiser for the Indian market, built phase by pha
 
 **Live app:** [spendweiss.netlify.app](https://spendweiss.netlify.app/)
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/MoSahil147/SpendWeiss)
+
 ## How it is built
 
 ![SpendWeiss demo](./assets/Demo.gif)
